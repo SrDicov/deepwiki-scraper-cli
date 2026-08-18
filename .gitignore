@@ -1,0 +1,8 @@
+node_modules/
+deepwiki.md
+consolidated.md
+*.sqlite
+*.sqlite-*
+*.pdf
+AGENTS.md
+DeepWiki-Scrapper.md

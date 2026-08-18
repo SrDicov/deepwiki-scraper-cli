@@ -1,0 +1,12 @@
+{
+  "name": "deepwiki-scrapper-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "GPL-3.0",
+  "author": "Dicov",
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
