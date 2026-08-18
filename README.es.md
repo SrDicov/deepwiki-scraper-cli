@@ -1,4 +1,4 @@
-# DeepWiki Scrapper CLI
+# DeepWiki Scraper CLI
 
 CLI en TypeScript que descarga la documentación completa de cualquier repositorio en [DeepWiki](https://deepwiki.com) a través de su API MCP y la compila en un único PDF navegable y offline.
 
