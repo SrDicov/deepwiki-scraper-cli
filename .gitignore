@@ -3,3 +3,4 @@ deepwiki.md
 *.sqlite
 *.sqlite-*
 *.pdf
+*.txt

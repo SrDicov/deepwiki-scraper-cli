@@ -36,6 +36,12 @@ npx tsx src/index.ts sindresorhus/is                                 # download 
 
 Outputs (CWD-relative): `deepwiki.md` (markdown store), `consolidated.md` (temp, deleted on success), the PDF.
 
+Shortcut (accepts `user/repo`, a GitHub link, or a DeepWiki link; saves `<repo>.txt` and `<repo>.pdf`):
+
+```
+./start.sh <user/repo | GitHub URL | DeepWiki URL> [--lang <idioma>]
+```
+
 Environment variables: `DEEPWIKI_RETRY_DELAY` (ms, default 250), `DEEPWIKI_MAX_RETRIES` (default 3). Retries on HTTP 429, 502–504, and network errors.
 
 `OPENROUTER_API_KEY` — required only when `--lang` is passed. Uses OpenRouter `stealth/ox-alpha` model.
