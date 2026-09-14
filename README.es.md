@@ -23,19 +23,28 @@ npm install
 ## Uso
 
 ```
-npx tsx src/index.ts <usuario/repositorio> [--output <archivo.pdf>]
+npx tsx src/index.ts <usuario/repositorio> [--output <archivo.pdf>] [--lang <idioma>]
 ```
 
 Ejemplos:
 
 ```
-npx tsx src/index.ts sindresorhus/is --output manual.pdf   # descarga + PDF
-npx tsx src/index.ts sindresorhus/is                       # solo descarga
+npx tsx src/index.ts sindresorhus/is --output manual.pdf --lang es   # descarga + traduce al español + PDF
+npx tsx src/index.ts sindresorhus/is --lang en                       # descarga + traduce al inglés
+npx tsx src/index.ts sindresorhus/is                                 # solo descarga (idioma original)
 ```
 
 Salidas (relativas al CWD): `deepwiki.md` (almacén de markdown), `consolidated.md` (temporal, se borra al éxito), el PDF.
 
+Atajo (acepta `usuario/repo`, link de GitHub o link de DeepWiki; guarda `<repo>.txt` y `<repo>.pdf`):
+
+```
+./start.sh <usuario/repo | URL de GitHub | URL de DeepWiki> [--lang <idioma>]
+```
+
 Variables de entorno: `DEEPWIKI_RETRY_DELAY` (ms, por defecto 250), `DEEPWIKI_MAX_RETRIES` (por defecto 3). Reintenta ante HTTP 429, 502–504 y errores de red.
+
+`OPENROUTER_API_KEY` — requerida solo cuando se pasa `--lang`. Usa el modelo `stealth/ox-alpha` de OpenRouter.
 
 ## Arquitectura
 
@@ -43,6 +52,7 @@ Variables de entorno: `DEEPWIKI_RETRY_DELAY` (ms, por defecto 250), `DEEPWIKI_MA
 - `src/mcp-client.ts` — cliente JSON-RPC del endpoint MCP de DeepWiki (parsing SSE)
 - `src/resilience.ts` — wrapper de backoff exponencial
 - `src/pdf-generator.ts` — markdown a PDF con Pandoc/Typst; elimina enlaces y citas que romperían Typst
+- `src/translator.ts` — traduce el contenido del wiki al idioma objetivo vía OpenRouter `stealth/ox-alpha`; divide por páginas (`# Page: `) para no exceder el contexto del modelo
 
 ## Licencia
 
