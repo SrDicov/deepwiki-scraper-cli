@@ -12,10 +12,30 @@ export async function generatePdf(mdPath: string, outputFilename: string): Promi
   const markdown = fs.readFileSync(mdPath, 'utf-8');
 
   // Parche para Typst: falla la compilación entera si hay referencias internas (#) no encontradas
+  // o enlaces vacíos (producen #link("") y Typst aborta).
   // Reemplazamos todos los enlaces vacíos () o internos (#algo) por simplemente su texto.
-  // El texto puede contener corchetes anidados ([[...]]()) o escapados (\[...\]) — ponytail:
-  // soporta 1 nivel de anidamiento, más niveles romperían Typst otra vez
-  const cleanedContent = markdown.replace(/\[((?:\[[^\]]*\]|[^\[\]]|\\.)*)\]\((?:#[^\)]*|\s*)\)/g, '$1');
+  // El texto puede contener corchetes anidados ([[...]]()) o escapados (\[...\]) — en bucle
+  // hasta punto fijo porque un enlace externo puede envolver otro interno ([[`a`]() , `b`]())
+  // y una sola pasada dejaría el interno intacto.
+  let cleanedContent = markdown;
+  let prev: string;
+  do {
+    prev = cleanedContent;
+    cleanedContent = cleanedContent.replace(/\[((?:\[[^\]]*\]|[^\[\]]|\\.)*)\]\((?:#[^\)]*|\s*)\)/g, '$1');
+  } while (cleanedContent !== prev);
+
+  // Parche para Pandoc/Typst: DeepWiki envuelve listas de archivos fuente en <details><summary>...
+  // </summary>...</details>. Esos bloques HTML se renderizan como texto literal en el PDF.
+  // Los convertimos a markdown plano: **Título**\n\nContenido
+  // Parche para Pandoc: DeepWiki emite bloques ---\n**Sources:**\n...\n--- entre páginas;
+  // Pandoc los lee como bloque YAML frontmatter y aborta ("did not find expected ... alias"
+  // por las líneas "* ..."). Se desactiva la extensión yaml_metadata_block: el wiki nunca
+  // trae frontmatter real (empieza por "# Page:"), y --- sigue renderizando como regla horizontal.
+  // (Esto también cubre el antiguo caso ---\n```# Page:, ya sin parche dedicado.)
+  cleanedContent = cleanedContent.replace(
+    /<details>\s*(?:```html\s*)?<summary>(.*?)<\/summary>\s*([\s\S]*?)\s*<\/details>/g,
+    (_, title, content) => `**${title.trim()}**\n\n${content.trim()}\n`
+  );
 
   const consolidatedPath = path.resolve(process.cwd(), 'consolidated.md');
   const outputPath = path.resolve(process.cwd(), outputFilename);
@@ -25,14 +45,15 @@ export async function generatePdf(mdPath: string, outputFilename: string): Promi
 
   return new Promise((resolve, reject) => {
     // Comando: pandoc consolidated.md -o outputFilename --pdf-engine=typst
-    // -f markdown-citations: sin citeproc las citas [@repo] se quedan como texto plano;
-    // si no, Pandoc las emite como #cite(...) y Typst aborta sin bibliografía
+    // -f markdown-citations-yaml_metadata_block: sin citeproc las citas [@repo] se quedan
+    // como texto plano; si no, Pandoc las emite como #cite(...) y Typst aborta sin bibliografía.
+    // -yaml_metadata_block: los --- entre páginas no son frontmatter (ver arriba).
     const pandoc = spawn('pandoc', [
       consolidatedPath,
       '-o',
       outputPath,
       '-f',
-      'markdown-citations',
+      'markdown-citations-yaml_metadata_block',
       '--pdf-engine=typst'
     ]);
 
