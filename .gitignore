@@ -4,3 +4,5 @@ deepwiki.md
 *.sqlite-*
 *.pdf
 *.txt
+v/deepwiki
+v/deepwiki-chimera

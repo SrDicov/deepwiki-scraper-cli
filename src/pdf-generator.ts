@@ -54,7 +54,11 @@ export async function generatePdf(mdPath: string, outputFilename: string): Promi
       outputPath,
       '-f',
       'markdown-citations-yaml_metadata_block',
-      '--pdf-engine=typst'
+      '--pdf-engine=typst',
+      // pandoc <3.10 emite font: () en su template de Typst y typst >=0.13 aborta
+      // con "font fallback list must not be empty". typst embebe Libertinus Serif.
+      '-V',
+      'mainfont=Libertinus Serif'
     ]);
 
     pandoc.stdout.on('data', (data) => {
