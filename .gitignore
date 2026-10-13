@@ -1,8 +1,5 @@
-node_modules/
+deepwiki
+deepwiki-chimera
 deepwiki.md
-*.sqlite
-*.sqlite-*
 *.pdf
 *.txt
-v/deepwiki
-v/deepwiki-chimera

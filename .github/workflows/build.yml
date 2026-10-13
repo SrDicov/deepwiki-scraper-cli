@@ -3,6 +3,7 @@ name: build
 on:
   push:
     branches: [main, testing]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 jobs:
@@ -17,22 +18,36 @@ jobs:
           echo "/tmp/v" >> "$GITHUB_PATH"
           /tmp/v/v version
       - name: Tests
-        run: cd v && v test .
+        run: v test .
       - name: Build glibc
-        run: cd v && v -prod -o deepwiki .
+        run: v -prod -o deepwiki .
       - name: Build musl estático (Chimera)
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools
-          cd v && v -cc musl-gcc -cflags "-static" -gc none -d musl -prod -o deepwiki-chimera .
+          v -cc musl-gcc -cflags "-static" -gc none -d musl -prod -o deepwiki-chimera .
       - name: Humo
         run: |
-          ./v/deepwiki --version
-          ./v/deepwiki-chimera --version
-          printf '# T\n' | ./v/deepwiki -
-          printf '' | ./v/deepwiki - 2>&1 | grep -q 'no se recibió' && echo STDIN-VACIO-OK
+          ./deepwiki --version
+          ./deepwiki-chimera --version
+          printf '# T\n' | ./deepwiki -
+          printf '' | ./deepwiki - 2>&1 | grep -q 'no se recibió' && echo STDIN-VACIO-OK
       - uses: actions/upload-artifact@v4
         with:
           name: deepwiki-linux-x86_64
           path: |
-            v/deepwiki
-            v/deepwiki-chimera
+            deepwiki
+            deepwiki-chimera
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: deepwiki-linux-x86_64
+          path: dist/
+      - run: gh release create "${{ github.ref_name }}" --title "${{ github.ref_name }}" --generate-notes dist/deepwiki dist/deepwiki-chimera
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

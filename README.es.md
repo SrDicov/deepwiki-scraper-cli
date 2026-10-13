@@ -1,63 +1,40 @@
-# DeepWiki Scraper CLI
+# deepwiki-scraper-cli
 
-CLI en TypeScript que descarga la documentación completa de cualquier repositorio en [DeepWiki](https://deepwiki.com) a través de su API MCP y la compila en un único PDF navegable y offline.
+CLI en V que descarga la wiki completa de cualquier repo desde
+[DeepWiki](https://deepwiki.com) vía MCP y genera un único PDF offline.
+Sin runtime: un solo binario estático.
 
-## Características
+## Instalar
 
-- Descarga el wiki completo (todas las páginas) en una sola llamada JSON-RPC sobre MCP (`https://mcp.deepwiki.com/mcp`)
-- Almacena el markdown en `deepwiki.md` (almacén persistente, se sobrescribe en cada ejecución)
-- Genera el PDF con Pandoc + Typst
-- Exponential backoff con jitter ante rate limits y errores de red
+- [V](https://vlang.io), más `pandoc` + `typst` en el PATH para los PDF
+  (Arch: `pandoc-bin`, no `pandoc-cli` — este último entra en conflicto y trae ~675MB de dependencias GHC)
+- O descarga `deepwiki` / `deepwiki-chimera` (musl, para Chimera Linux) de
+  [Releases](https://github.com/SrDicov/deepwiki-scraper-cli/releases)
 
-## Requisitos
-
-- Node.js >= 18 (`fetch` global)
-- Binarios de [Pandoc](https://pandoc.org) y [Typst](https://typst.app) en el PATH
-
-## Instalación
+## Compilar
 
 ```
-npm install
+v -prod -o deepwiki .   # glibc
+v test .                # 19 tests
 ```
+
+Estático musl (Chimera): `v -cc musl-gcc -cflags "-static" -gc none -d musl -prod -o deepwiki-chimera .`
 
 ## Uso
 
 ```
-npx tsx src/index.ts <usuario/repositorio> [--output <archivo.pdf>] [--lang <idioma>]
+./deepwiki <usuario/repo | URL GitHub | URL DeepWiki>
+./deepwiki sindresorhus/is                     # crea is.txt + is.pdf
+./deepwiki sindresorhus/is --output manual.pdf # stdout + PDF ahí
+./deepwiki - < wiki.md | wc -c                 # filtro stdin, sin ficheros
 ```
 
-Ejemplos:
+Sin `--output`: guarda `<repo>.txt` (siempre primero) y `<repo>.pdf`,
+stdout en silencio. `-` lee markdown de stdin (tuberías y redirecciones).
 
-```
-npx tsx src/index.ts sindresorhus/is --output manual.pdf --lang es   # descarga + traduce al español + PDF
-npx tsx src/index.ts sindresorhus/is --lang en                       # descarga + traduce al inglés
-npx tsx src/index.ts sindresorhus/is                                 # solo descarga (idioma original)
-```
-
-Salidas (relativas al CWD): `deepwiki.md` (almacén de markdown), `consolidated.md` (temporal, se borra al éxito), el PDF.
-
-Atajo (acepta `usuario/repo`, link de GitHub o link de DeepWiki; guarda `<repo>.txt` y `<repo>.pdf`):
-
-```
-./start.sh <usuario/repo | URL de GitHub | URL de DeepWiki> [--lang <idioma>]
-```
-
-Variables de entorno: `DEEPWIKI_RETRY_DELAY` (ms, por defecto 250), `DEEPWIKI_MAX_RETRIES` (por defecto 3). Reintenta ante HTTP 429, 502–504 y errores de red.
-
-`OPENROUTER_API_KEY` — requerida solo cuando se pasa `--lang`. Usa el modelo `stealth/ox-alpha` de OpenRouter.
-
-## Arquitectura
-
-- `src/index.ts` — punto de entrada del CLI: descarga + PDF opcional
-- `src/mcp-client.ts` — cliente JSON-RPC del endpoint MCP de DeepWiki (parsing SSE)
-- `src/resilience.ts` — wrapper de backoff exponencial
-- `src/pdf-generator.ts` — markdown a PDF con Pandoc/Typst; elimina enlaces y citas que romperían Typst
-- `src/translator.ts` — traduce el contenido del wiki al idioma objetivo vía OpenRouter `stealth/ox-alpha`; divide por páginas (`# Page: `) para no exceder el contexto del modelo
+Variables: `DEEPWIKI_RETRY_DELAY` (ms, 250), `DEEPWIKI_MAX_RETRIES` (3),
+`TMPDIR`. Reintenta ante 429, 502–504, errores de red y errores JSON-RPC.
 
 ## Licencia
 
-GPL-3.0 — ver [LICENSE](LICENSE).
-
-## Créditos
-
-Desarrollado por Dicov.
+GPL-3.0 — ver [LICENSE](LICENSE). Por Dicov.

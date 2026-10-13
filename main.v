@@ -2,7 +2,7 @@ module main
 
 import os
 
-const version = '2.0.0'
+const version = '0.0.1'
 
 fn usage() {
 	eprintln('uso: deepwiki <usuario/repo|URL|-> [--output <archivo.pdf>]')
